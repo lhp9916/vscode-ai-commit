@@ -1,0 +1,50 @@
+name: Publish to Marketplace
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "发布版本号，例如 0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: 发布到 VS Code Marketplace
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 准备 Linux 虚拟显示
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: 写入版本号
+        run: npm version "${{ inputs.version }}" --no-git-tag-version --allow-same-version
+
+      - name: 编译与测试
+        run: npm run compile && npm test
+
+      - name: 运行 Lint
+        run: npm run lint
+
+      - name: 打包 VSIX
+        run: npm run package -- --allow-missing-repository
+
+      # 需要仓库 Secret：VSCE_PAT；未配置时该步骤会明确失败，而不是静默跳过。
+      - name: 发布扩展
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --packagePath "vscode-ai-commit-${{ inputs.version }}.vsix" --pat "$VSCE_PAT"

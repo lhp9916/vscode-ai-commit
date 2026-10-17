@@ -1,0 +1,165 @@
+{
+  "name": "vscode-ai-commit",
+  "displayName": "AI Commit Message",
+  "description": "使用 OpenAI 兼容接口，根据已暂存的 Git 变更生成提交消息。",
+  "version": "0.1.0",
+  "publisher": "peng",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lhp9916/vscode-ai-commit.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "commit",
+    "ai",
+    "deepseek",
+    "qwen"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiCommit.generateMessage",
+        "title": "AI 生成提交消息",
+        "category": "AI Commit Message",
+        "icon": {
+          "light": "media/ai-commit-light.svg",
+          "dark": "media/ai-commit-dark.svg"
+        }
+      },
+      {
+        "command": "aiCommit.openSettings",
+        "title": "打开设置",
+        "category": "AI Commit Message"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "aiCommit.generateMessage",
+          "when": "scmProvider == git",
+          "group": "navigation@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "aiCommit.generateMessage",
+          "when": "scmProvider == git"
+        },
+        {
+          "command": "aiCommit.openSettings"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI Commit Message",
+      "properties": {
+        "aiCommit.provider": {
+          "type": "string",
+          "enum": [
+            "deepseek",
+            "dashscope",
+            "zhipu",
+            "moonshot",
+            "siliconflow",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "DeepSeek",
+            "通义千问 DashScope",
+            "智谱 GLM",
+            "Kimi Moonshot",
+            "硅基流动 SiliconFlow",
+            "自定义 OpenAI 兼容接口"
+          ],
+          "default": "deepseek",
+          "description": "模型服务供应商。"
+        },
+        "aiCommit.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI 兼容 API 的 Base URL。留空时使用所选供应商的默认地址。"
+        },
+        "aiCommit.model": {
+          "type": "string",
+          "default": "",
+          "description": "模型名称。留空时使用所选供应商的默认模型。"
+        },
+        "aiCommit.messageStyle": {
+          "type": "string",
+          "enum": [
+            "conventionalZh",
+            "plainZh",
+            "conventionalEn"
+          ],
+          "enumDescriptions": [
+            "中文 Conventional Commits",
+            "中文纯描述",
+            "英文 Conventional Commits"
+          ],
+          "default": "conventionalZh",
+          "description": "生成提交消息的风格。"
+        },
+        "aiCommit.strictMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "按 Conventional Commits 校验生成结果，不合规时自动重写一次。"
+        },
+        "aiCommit.extraPrompt": {
+          "type": "string",
+          "default": "",
+          "editPresentation": "multilineText",
+          "description": "追加到系统提示词的额外要求，例如“不要使用 emoji”。"
+        },
+        "aiCommit.perFileChars": {
+          "type": "number",
+          "default": 6000,
+          "minimum": 1,
+          "description": "单个文件差异最多发送的字符数。"
+        },
+        "aiCommit.totalChars": {
+          "type": "number",
+          "default": 24000,
+          "minimum": 1,
+          "description": "所有差异最多发送的总字符数。"
+        },
+        "aiCommit.timeoutSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 5,
+          "description": "请求超时时间（秒）。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -p . --watch",
+    "lint": "eslint src",
+    "test": "npm run compile && node scripts/run-tests.js",
+    "test:integration": "npm run compile && node scripts/run-integration-tests.js",
+    "package": "npm run compile && npx @vscode/vsce package --no-dependencies",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.2.1",
+    "eslint": "^8.57.1",
+    "typescript": "^5.7.2"
+  }
+}
