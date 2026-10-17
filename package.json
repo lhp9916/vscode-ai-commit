@@ -3,8 +3,9 @@
   "displayName": "AI Commit Message",
   "description": "使用 OpenAI 兼容接口，根据已暂存的 Git 变更生成提交消息。",
   "version": "0.1.0",
-  "publisher": "peng",
+  "publisher": "lhp9916",
   "license": "MIT",
+  "icon": "media/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/lhp9916/vscode-ai-commit.git"
@@ -16,6 +17,10 @@
     "SCM Providers",
     "Other"
   ],
+  "galleryBanner": {
+    "color": "#17223B",
+    "theme": "dark"
+  },
   "keywords": [
     "git",
     "commit",
@@ -149,7 +154,8 @@
     "lint": "eslint src",
     "test": "npm run compile && node scripts/run-tests.js",
     "test:integration": "npm run compile && node scripts/run-integration-tests.js",
-    "package": "npm run compile && npx @vscode/vsce package --no-dependencies",
+    "package": "npm run compile && npx @vscode/vsce package --no-dependencies --allow-missing-repository",
+    "publish": "npm run compile && npx @vscode/vsce publish --no-dependencies --allow-missing-repository",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {

@@ -27,6 +27,7 @@ npm run package
 - `npm test` 运行编译后的 26 项纯逻辑测试，包括本地模拟模型服务的完整生成流程。
 - `npm run test:integration` 启动 VS Code 扩展宿主，使用临时 Git 仓库与本地模拟模型服务，验证命令注册、暂存差异读取和提交框回填。
 - `npm run package` 产出 `vscode-ai-commit-<version>.vsix`。
+- `npm run publish` 使用本机登录的 Marketplace 发布者凭据发布；CI 发布使用工作流中的 `VSCE_PAT` Secret。
 - 本机 npm 可能被环境变量 `NPM_CONFIG_OFFLINE` 设为离线；需要下载依赖时，在单次命令中覆盖为 `false`，不要修改全局配置。
 
 ## 约束

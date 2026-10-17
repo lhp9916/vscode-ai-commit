@@ -48,7 +48,7 @@ jobs:
         run: xvfb-run -a npm run test:integration
 
       - name: 打包 VSIX
-        run: npm run package -- --allow-missing-repository
+        run: npm run package
 
       - name: 上传 VSIX
         uses: actions/upload-artifact@v7

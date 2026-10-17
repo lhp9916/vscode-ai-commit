@@ -16,7 +16,7 @@ interface StubServer {
 }
 
 export async function run(): Promise<void> {
-  const extension = vscode.extensions.getExtension("peng.vscode-ai-commit");
+  const extension = vscode.extensions.getExtension("lhp9916.vscode-ai-commit");
   assert.ok(extension, "扩展未加载");
   await extension.activate();
   console.log("[integration] extension activated");

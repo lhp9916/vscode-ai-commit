@@ -1,10 +1,12 @@
 .vscode/**
+.github/**
 src/**
 out/test/**
 out/integration/**
 out/**/*.map
 .npm-cache/**
 scripts/**
+AGENTS.md
 tsconfig.json
 .eslintrc.json
 **/*.ts

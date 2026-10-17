@@ -40,11 +40,14 @@ jobs:
       - name: 运行 Lint
         run: npm run lint
 
+      - name: 运行集成测试
+        run: xvfb-run -a npm run test:integration
+
       - name: 打包 VSIX
-        run: npm run package -- --allow-missing-repository
+        run: npm run package
 
       # 需要仓库 Secret：VSCE_PAT；未配置时该步骤会明确失败，而不是静默跳过。
       - name: 发布扩展
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx vsce publish --packagePath "vscode-ai-commit-${{ inputs.version }}.vsix" --pat "$VSCE_PAT"
+        run: npx vsce publish --packagePath "vscode-ai-commit-${{ inputs.version }}.vsix" --pat "$VSCE_PAT" --skip-duplicate

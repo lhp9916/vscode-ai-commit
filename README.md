@@ -16,11 +16,13 @@ VS Code 扩展：根据已暂存的 Git 变更调用大模型生成提交消息�
 
 ## 使用
 
-1. 在扩展视图中安装 `vscode-ai-commit-<version>.vsix`，或开发时按 `F5` 启动扩展宿主。
+1. 在 VS Code 扩展视图中搜索 `AI Commit Message`，或在扩展市场页面安装。
 2. 执行命令 `AI Commit Message: 打开设置`，选择供应商并填写 API Key。
 3. 在源代码管理面板暂存要提交的文件。
 4. 点击源代码管理标题栏的 AI 图标，或执行 `AI Commit Message: AI 生成提交消息`。
 5. 生成结果会写入提交消息框，可直接编辑或撤销。
+
+也可从 [GitHub Releases](https://github.com/lhp9916/vscode-ai-commit/releases) 下载 VSIX 离线安装。
 
 ## 设置
 
@@ -109,9 +111,25 @@ git push origin v0.2.0
 
 `release.yml` 会产出 `vscode-ai-commit-0.2.0.vsix` 并挂到 Release 附件。
 
-若要发布到 Marketplace，先在 Azure DevOps 创建 Personal Access Token（Marketplace > Manage 权限），
-再在 GitHub 仓库的 `Settings > Secrets and variables > Actions` 中新增 `VSCE_PAT`，然后手动运行
-`Publish to Marketplace` 工作流并填写版本号。
+### 发布到 VS Code Marketplace
+
+1. 用 Microsoft 账号登录 [Azure DevOps](https://dev.azure.com)，创建一个组织（个人使用可任意命名）。
+2. 打开 [Marketplace 管理页](https://marketplace.visualstudio.com/manage)，创建发布者，发布者 ID 必须与
+   `package.json` 中的 `publisher` 一致（当前为 `lhp9916`）。
+3. 在 Azure DevOps 的 `User settings > Personal access tokens` 创建 PAT：
+   - Organization 选择 `All accessible organizations`
+   - Scopes 选择 `Custom defined`，只勾选 `Marketplace > Manage`
+   - 记录有效期，过期后需要重新生成并更新 Secret
+4. 在 GitHub 仓库的 `Settings > Secrets and variables > Actions` 新增 Repository secret
+   `VSCE_PAT`，值为上一步的 PAT。
+5. 打开仓库的 `Actions > Publish to Marketplace > Run workflow`，填写与发布版本一致的版本号，
+   例如 `0.1.0`。
+
+工作流会依次编译、跑单元测试与集成测试、Lint、打包 VSIX，再调用
+`vsce publish --packagePath ... --pat "$VSCE_PAT"` 上传。首次发布通常需要几分钟才能在扩展市场搜索到。
+
+本地发布也可执行 `npm run publish`，但需要先在本机完成 `npx vsce login <publisher>`。
+不要将 PAT 写入仓库、脚本或日志。
 
 ## 说明
 

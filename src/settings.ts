@@ -97,7 +97,7 @@ export async function openSettings(context: vscode.ExtensionContext): Promise<vo
   );
 
   if (action?.action === "settings") {
-    await vscode.commands.executeCommand("workbench.action.openSettings", "@ext:peng.vscode-ai-commit");
+    await vscode.commands.executeCommand("workbench.action.openSettings", "@ext:vscode-ai-commit");
   } else if (action?.action === "test") {
     await vscode.commands.executeCommand("aiCommit.testConnection");
   } else if (action?.action === "models") {

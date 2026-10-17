@@ -52,7 +52,7 @@ jobs:
         run: xvfb-run -a npm run test:integration
 
       - name: 打包 VSIX
-        run: npm run package -- --allow-missing-repository
+        run: npm run package
 
       - name: 校验产物
         run: |
