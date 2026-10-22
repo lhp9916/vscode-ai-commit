@@ -5,7 +5,7 @@ import {
   buildModelsUrl,
   describeHttpStatus,
   extractChatContent,
-  extractModelIds,
+  extractModelOptions,
 } from "../llm/openAiCompatibleClient";
 
 test("拼接对话与模型地址", () => {
@@ -30,10 +30,19 @@ test("解析对话响应与错误", () => {
   );
 });
 
-test("模型列表去重并排序", () => {
+test("模型列表保留展示信息、去重并按供应商排序", () => {
   assert.deepEqual(
-    extractModelIds('{"data":[{"id":"b"},{"id":"a"},{"id":"b"}]}'),
-    ["a", "b"],
+    extractModelOptions(JSON.stringify({
+      data: [
+        { id: "workbuddy/b", display_name: "B", owned_by: "WorkBuddy", context_length: 1000 },
+        { id: "deepseek/a", display_name: "A", owned_by: "DeepSeek", context_length: 2000 },
+        { id: "workbuddy/b", display_name: "B duplicate", owned_by: "WorkBuddy", context_length: 1000 },
+      ],
+    })),
+    [
+      { id: "deepseek/a", displayName: "A", group: "DeepSeek", contextLength: 2000 },
+      { id: "workbuddy/b", displayName: "B", group: "WorkBuddy", contextLength: 1000 },
+    ],
   );
 });
 

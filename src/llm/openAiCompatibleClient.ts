@@ -1,4 +1,4 @@
-import { EndpointConfig } from "../core/types";
+import { EndpointConfig, ModelOption } from "../core/types";
 
 export class AiCommitError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
@@ -37,7 +37,7 @@ export class OpenAiCompatibleClient {
     return extractChatContent(response.body);
   }
 
-  async listModels(apiKey: string, signal?: AbortSignal): Promise<string[]> {
+  async listModels(apiKey: string, signal?: AbortSignal): Promise<ModelOption[]> {
     const response = await this.request(
       buildModelsUrl(this.config.baseUrl),
       "GET",
@@ -48,7 +48,7 @@ export class OpenAiCompatibleClient {
     if (response.body.trim() === "") {
       throw new AiCommitError("服务返回了空响应。");
     }
-    return extractModelIds(response.body);
+    return extractModelOptions(response.body);
   }
 
   private async request(
@@ -161,27 +161,30 @@ export function extractChatContent(responseBody: string): string {
   throw new AiCommitError("模型响应中没有可用的提交消息内容。");
 }
 
-export function extractModelIds(responseBody: string): string[] {
+export function extractModelOptions(responseBody: string): ModelOption[] {
   const root = parseJson(responseBody, "无法解析模型列表，返回内容不是合法 JSON。");
-  const ids = new Set<string>();
+  const models = new Map<string, ModelOption>();
   if (isRecord(root)) {
     const data = root.data;
     const items = Array.isArray(data) ? data : isRecord(data) ? Object.values(data) : [];
     for (const item of items) {
-      const id = modelIdOf(item);
-      if (id) {
-        ids.add(id);
+      const model = modelOptionOf(item);
+      if (model && !models.has(model.id)) {
+        models.set(model.id, model);
       }
     }
   }
-  if (ids.size === 0) {
+  if (models.size === 0) {
     const error = extractError(responseBody);
     if (error) {
       throw new AiCommitError(`获取模型列表失败：${error}`);
     }
     throw new AiCommitError("服务未返回任何模型，请检查 Base URL 与 API Key。");
   }
-  return Array.from(ids).sort();
+  return Array.from(models.values()).sort((left, right) => {
+    const groupOrder = left.group.localeCompare(right.group);
+    return groupOrder !== 0 ? groupOrder : left.id.localeCompare(right.id);
+  });
 }
 
 export function describeHttpStatus(status: number, responseBody: string): string {
@@ -228,14 +231,30 @@ function extractError(responseBody: string): string | null {
   return null;
 }
 
-function modelIdOf(item: unknown): string | null {
+function modelOptionOf(item: unknown): ModelOption | null {
   if (isNonBlankString(item)) {
-    return item.trim();
+    const id = item.trim();
+    return { id, displayName: id, group: groupOf(id), contextLength: 0 };
   }
-  if (isRecord(item) && isNonBlankString(item.id)) {
-    return item.id.trim();
+  if (!isRecord(item) || !isNonBlankString(item.id)) {
+    return null;
   }
-  return null;
+  const id = item.id.trim();
+  return {
+    id,
+    displayName: isNonBlankString(item.display_name) ? item.display_name.trim() : id,
+    group: isNonBlankString(item.owned_by) ? item.owned_by.trim() : groupOf(id),
+    contextLength: finiteNumber(item.context_length) ?? finiteNumber(item.context_window) ?? 0,
+  };
+}
+
+function groupOf(id: string): string {
+  const slash = id.indexOf("/");
+  return slash > 0 ? id.slice(0, slash) : "其他";
+}
+
+function finiteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function parseJson(text: string, message: string): unknown {

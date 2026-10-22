@@ -1,17 +1,17 @@
 import * as vscode from "vscode";
 import { generateCommitMessage } from "./core/commitMessageGenerator";
 import { buildConnectionTestPrompt } from "./core/promptBuilder";
-import { CommitSettings, EndpointConfig } from "./core/types";
+import { CommitSettings, EndpointConfig, ModelOption } from "./core/types";
 import { collectStagedChanges } from "./git/changeCollector";
 import { AiCommitError, OpenAiCompatibleClient } from "./llm/openAiCompatibleClient";
 import {
   getApiKey,
   getConfiguredProvider,
-  openSettings,
   pickModel,
   readSettings,
   setApiKey,
 } from "./settings";
+import { SettingsPanel } from "./settingsPanel";
 
 interface GitRepository {
   rootUri: vscode.Uri;
@@ -33,11 +33,21 @@ interface RepositoryQuickPickItem extends vscode.QuickPickItem {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+  const settingsPanel = new SettingsPanel(context);
   context.subscriptions.push(
     vscode.commands.registerCommand("aiCommit.generateMessage", () => generate(context)),
-    vscode.commands.registerCommand("aiCommit.openSettings", () => openSettings(context)),
+    vscode.commands.registerCommand("aiCommit.openSettings", () => settingsPanel.show()),
     vscode.commands.registerCommand("aiCommit.testConnection", () => testConnection(context)),
     vscode.commands.registerCommand("aiCommit.fetchModels", () => fetchModels(context)),
+    vscode.commands.registerCommand("aiCommit.runConnectionTest", (input: unknown) =>
+      testConnectionWithInput(input)),
+    vscode.commands.registerCommand("aiCommit.listModels", (input: unknown) =>
+      fetchModelsWithInput(input)),
+    // 旧版升级过程中，已打开的设置页仍可能调用这两个命令名。
+    vscode.commands.registerCommand("aiCommit._test.connection", (input: unknown) =>
+      testConnectionWithInput(input)),
+    vscode.commands.registerCommand("aiCommit._test.fetchModels", (input: unknown) =>
+      fetchModelsWithInput(input)),
   );
   if (context.extensionMode === vscode.ExtensionMode.Test) {
     context.subscriptions.push(
@@ -67,7 +77,7 @@ async function generate(context: vscode.ExtensionContext): Promise<void> {
       "打开设置",
     );
     if (configure) {
-      await openSettings(context);
+      await vscode.commands.executeCommand("aiCommit.openSettings");
     }
     return;
   }
@@ -132,6 +142,19 @@ async function testConnection(context: vscode.ExtensionContext): Promise<void> {
   }
 }
 
+async function testConnectionWithInput(input: unknown): Promise<void> {
+  const request = normalizeEndpointRequest(input);
+  const reply = await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: "测试 AI 服务连接" },
+    async () => new OpenAiCompatibleClient(toEndpoint(request.settings)).complete(
+      request.apiKey,
+      "你是一个用于连通性测试的助手，请严格按要求回复。",
+      buildConnectionTestPrompt(),
+    ),
+  );
+  void vscode.window.showInformationMessage(`连接成功，模型回复：${reply}`);
+}
+
 async function fetchModels(context: vscode.ExtensionContext): Promise<void> {
   const settings = readSettings();
   const apiKey = await getApiKey(context, settings.provider);
@@ -149,7 +172,7 @@ async function fetchModels(context: vscode.ExtensionContext): Promise<void> {
         return new OpenAiCompatibleClient(toEndpoint(settings)).listModels(apiKey, controller.signal);
       },
     );
-    const selected = await pickModel(models, settings.model);
+    const selected = await pickModel(models.map((model) => model.id), settings.model);
     if (selected) {
       await vscode.workspace
         .getConfiguration("aiCommit")
@@ -161,12 +184,44 @@ async function fetchModels(context: vscode.ExtensionContext): Promise<void> {
   }
 }
 
+/**
+ * 设置面板尚未保存时也要能拉取模型，因此这里直接使用面板传进来的当前值。
+ */
+async function fetchModelsWithInput(input: unknown): Promise<ModelOption[]> {
+  const request = normalizeEndpointRequest(input);
+  return vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: "获取模型列表" },
+    async () => new OpenAiCompatibleClient(toEndpoint(request.settings)).listModels(request.apiKey),
+  );
+}
+
 function toEndpoint(settings: CommitSettings): EndpointConfig {
   return {
     baseUrl: settings.baseUrl,
     model: settings.model,
     timeoutSeconds: settings.timeoutSeconds,
   };
+}
+
+interface EndpointRequest {
+  settings: CommitSettings;
+  apiKey: string;
+}
+
+function normalizeEndpointRequest(value: unknown): EndpointRequest {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("请求参数无效。");
+  }
+  const record = value as Record<string, unknown>;
+  const settings = record.settings;
+  if (typeof settings !== "object" || settings === null) {
+    throw new Error("请求参数缺少模型设置。");
+  }
+  const apiKey = typeof record.apiKey === "string" ? record.apiKey.trim() : "";
+  if (!apiKey) {
+    throw new Error("请先填写 API Key。");
+  }
+  return { settings: settings as CommitSettings, apiKey };
 }
 
 async function pickRepository(): Promise<GitRepository | undefined> {
@@ -204,4 +259,5 @@ async function showError(error: unknown): Promise<void> {
   const message = error instanceof Error ? error.message : String(error);
   void vscode.window.showErrorMessage(`AI 生成提交消息失败：${message}`);
 }
+
 

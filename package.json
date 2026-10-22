@@ -2,7 +2,7 @@
   "name": "vscode-ai-commit",
   "displayName": "AI Commit Message",
   "description": "使用 OpenAI 兼容接口，根据已暂存的 Git 变更生成提交消息。",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "lhp9916",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -45,7 +45,7 @@
       },
       {
         "command": "aiCommit.openSettings",
-        "title": "打开设置",
+        "title": "打开完整设置",
         "category": "AI Commit Message"
       }
     ],
@@ -80,26 +80,37 @@
             "siliconflow",
             "custom"
           ],
-          "enumDescriptions": [
+          "enumItemLabels": [
             "DeepSeek",
             "通义千问 DashScope",
             "智谱 GLM",
             "Kimi Moonshot",
             "硅基流动 SiliconFlow",
-            "自定义 OpenAI 兼容接口"
+            "自定义（OpenAI 兼容接口）"
+          ],
+          "enumDescriptions": [
+            "DeepSeek 官方 API。",
+            "阿里云百炼/通义千问的 OpenAI 兼容接口。",
+            "智谱开放平台的 OpenAI 兼容接口。",
+            "Kimi 开放平台的 OpenAI 兼容接口。",
+            "SiliconFlow 的 OpenAI 兼容接口。",
+            "自行填写 Base URL 与模型名称。"
           ],
           "default": "deepseek",
-          "description": "模型服务供应商。"
+          "markdownDescription": "**模型服务供应商**。执行 `AI Commit Message: 打开完整设置` 可获得带下拉选项的完整配置面板。",
+          "order": 1
         },
         "aiCommit.baseUrl": {
           "type": "string",
           "default": "",
-          "description": "OpenAI 兼容 API 的 Base URL。留空时使用所选供应商的默认地址。"
+          "markdownDescription": "**Base URL**。OpenAI 兼容接口地址；留空时使用所选供应商的默认地址。",
+          "order": 2
         },
         "aiCommit.model": {
           "type": "string",
           "default": "",
-          "description": "模型名称。留空时使用所选供应商的默认模型。"
+          "markdownDescription": "**模型名称**。留空时使用供应商默认模型；在完整设置面板中可点击“获取模型”从接口拉取。",
+          "order": 3
         },
         "aiCommit.messageStyle": {
           "type": "string",
@@ -108,42 +119,53 @@
             "plainZh",
             "conventionalEn"
           ],
-          "enumDescriptions": [
+          "enumItemLabels": [
             "中文 Conventional Commits",
             "中文纯描述",
-            "英文 Conventional Commits"
+            "English Conventional Commits"
+          ],
+          "enumDescriptions": [
+            "中文消息，带 feat、fix 等类型前缀。示例：feat(upload): 添加上传文件日志",
+            "中文单行描述，不带类型前缀。示例：添加上传文件日志",
+            "英文消息，带 Conventional Commits 类型前缀。示例：feat(upload): add upload logging"
           ],
           "default": "conventionalZh",
-          "description": "生成提交消息的风格。"
+          "markdownDescription": "**提交消息风格（Message Style）**：决定生成结果长什么样。\n\n- **中文 Conventional Commits**：`feat(upload): 添加上传文件日志`，适合使用提交规范的中文团队。\n- **中文纯描述**：`添加上传文件日志`，只保留一句说明，不带类型前缀。\n- **English Conventional Commits**：`feat(upload): add upload logging`，英文提交规范。\n\n“Conventional Commits”是一种通用提交格式：`类型(模块): 描述`。",
+          "order": 4
         },
         "aiCommit.strictMode": {
           "type": "boolean",
           "default": false,
-          "description": "按 Conventional Commits 校验生成结果，不合规时自动重写一次。"
+          "markdownDescription": "**严格模式**。按 Conventional Commits 校验生成结果；不合规时自动让模型重写一次。",
+          "order": 5
         },
         "aiCommit.extraPrompt": {
           "type": "string",
           "default": "",
           "editPresentation": "multilineText",
-          "description": "追加到系统提示词的额外要求，例如“不要使用 emoji”。"
+          "markdownDescription": "**附加要求**。追加到系统提示词，例如“不要使用 emoji”“正文使用简短要点”。",
+          "order": 6
         },
         "aiCommit.perFileChars": {
           "type": "number",
           "default": 6000,
           "minimum": 1,
-          "description": "单个文件差异最多发送的字符数。"
+          "markdownDescription": "**单文件差异上限**（字符）。超出时截断该文件差异，但保留完整文件清单。",
+          "order": 7
         },
         "aiCommit.totalChars": {
           "type": "number",
           "default": 24000,
           "minimum": 1,
-          "description": "所有差异最多发送的总字符数。"
+          "markdownDescription": "**总差异上限**（字符）。所有文件差异合计超过后，后续文件只保留在清单中。",
+          "order": 8
         },
         "aiCommit.timeoutSeconds": {
           "type": "number",
           "default": 60,
           "minimum": 5,
-          "description": "请求超时时间（秒）。"
+          "markdownDescription": "**请求超时**（秒）。网络较慢时可适当增大。",
+          "order": 9
         }
       }
     }

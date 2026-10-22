@@ -17,7 +17,7 @@ VS Code 扩展：根据已暂存的 Git 变更调用大模型生成提交消息�
 ## 使用
 
 1. 在 VS Code 扩展视图中搜索 `AI Commit Message`，或在扩展市场页面安装。
-2. 执行命令 `AI Commit Message: 打开设置`，选择供应商并填写 API Key。
+2. 执行命令 `AI Commit Message: 打开完整设置`，在独立设置面板中配置供应商、模型与 API Key。
 3. 在源代码管理面板暂存要提交的文件。
 4. 点击源代码管理标题栏的 AI 图标，或执行 `AI Commit Message: AI 生成提交消息`。
 5. 生成结果会写入提交消息框，可直接编辑或撤销。
@@ -26,7 +26,10 @@ VS Code 扩展：根据已暂存的 Git 变更调用大模型生成提交消息�
 
 ## 设置
 
-在 VS Code 设置中搜索 `AI Commit Message`：
+执行 `AI Commit Message: 打开完整设置` 会打开独立配置面板。供应商和提交消息风格都是下拉选项，
+消息风格下方会实时显示含义与示例；模型可点击“获取模型”从供应商接口拉取。
+
+也可以直接在 VS Code 设置中搜索 `AI Commit Message`：
 
 | 设置项 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -40,7 +43,20 @@ VS Code 扩展：根据已暂存的 Git 变更调用大模型生成提交消息�
 | `aiCommit.totalChars` | `24000` | 总差异上限 |
 | `aiCommit.timeoutSeconds` | `60` | 请求超时 |
 
-API Key 不在设置页中，执行 `AI Commit Message: 打开设置` 输入。每个供应商的 Key 独立保存，切换供应商不会互相覆盖。
+### 提交消息风格（Message Style）
+
+`Message Style` 决定生成的提交消息格式，三个选项的区别如下：
+
+| 选项 | 生成示例 | 适用场景 |
+| --- | --- | --- |
+| 中文 Conventional Commits | `feat(upload): 添加上传文件日志` | 使用 Conventional Commits 规范的中文团队 |
+| 中文纯描述 | `添加上传文件日志` | 只想要一句中文说明，不需要类型前缀 |
+| English Conventional Commits | `feat(upload): add upload logging` | 使用英文提交规范 |
+
+Conventional Commits 的通用格式是 `类型(模块): 描述`，类型包括 `feat`、`fix`、`refactor`、
+`docs`、`test` 等。无法确定模块时可以省略括号，例如 `fix: 修复上传超时`。
+
+API Key 不在 `settings.json` 中，通过完整设置面板输入并存入 VS Code 加密凭据库。每个供应商的 Key 独立保存，切换供应商不会互相覆盖。
 
 ## 内置供应商
 

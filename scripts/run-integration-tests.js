@@ -9,7 +9,7 @@ const { runTests } = require("@vscode/test-electron");
 async function main() {
   const extensionDevelopmentPath = path.resolve(__dirname, "..");
   const extensionTestsPath = path.join(extensionDevelopmentPath, "out", "integration", "index.js");
-  const workspacePath = path.join(os.tmpdir(), "ai-commit-integration-workspace");
+  const workspacePath = fs.mkdtempSync(path.join(os.tmpdir(), "ai-commit-integration-"));
   prepareRepository(workspacePath);
 
   await runTests({

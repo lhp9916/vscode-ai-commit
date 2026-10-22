@@ -32,3 +32,10 @@ export interface EndpointConfig {
   model: string;
   timeoutSeconds: number;
 }
+
+export interface ModelOption {
+  id: string;
+  displayName: string;
+  group: string;
+  contextLength: number;
+}

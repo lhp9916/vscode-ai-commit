@@ -24,7 +24,16 @@ export async function run(): Promise<void> {
   const commands = await vscode.commands.getCommands(true);
   assert.ok(commands.includes("aiCommit.generateMessage"), "生成命令未注册");
   assert.ok(commands.includes("aiCommit.openSettings"), "设置命令未注册");
+  assert.ok(commands.includes("aiCommit.runConnectionTest"), "连接测试命令未注册");
+  assert.ok(commands.includes("aiCommit.listModels"), "模型列表命令未注册");
   console.log("[integration] commands registered");
+
+  await vscode.commands.executeCommand("aiCommit.openSettings");
+  const settingsTab = await waitForSettingsTab();
+  assert.ok(settingsTab, "设置面板未打开");
+  console.log(`[integration] settings tab input=${describeInput(settingsTab.input)}`);
+  assert.ok(describeInput(settingsTab.input).includes("mainThreadWebview-aiCommit.settings"), "设置面板不是 Webview");
+  console.log("[integration] settings panel opened");
 
   const gitExtension = vscode.extensions.getExtension<GitExtension>("vscode.git");
   assert.ok(gitExtension, "内置 Git 扩展不可用");
@@ -36,6 +45,33 @@ export async function run(): Promise<void> {
   const server = await startStubServer();
   const configuration = vscode.workspace.getConfiguration("aiCommit");
   try {
+    const models = await vscode.commands.executeCommand<Array<{
+      id: string;
+      displayName: string;
+      group: string;
+      contextLength: number;
+    }>>("aiCommit.listModels", {
+      settings: {
+        provider: "custom",
+        baseUrl: server.url,
+        model: "",
+        messageStyle: "conventionalZh",
+        strictMode: false,
+        extraPrompt: "",
+        perFileChars: 6000,
+        totalChars: 24000,
+        timeoutSeconds: 30,
+      },
+      apiKey: "integration-key",
+    });
+    assert.deepEqual(models, [{
+      id: "integration-model",
+      displayName: "Integration Model",
+      group: "integration",
+      contextLength: 1000,
+    }]);
+    console.log("[integration] model list fetched without model field");
+
     await configuration.update("provider", "custom", vscode.ConfigurationTarget.Global);
     await configuration.update("baseUrl", server.url, vscode.ConfigurationTarget.Global);
     await configuration.update("model", "integration-model", vscode.ConfigurationTarget.Global);
@@ -62,12 +98,53 @@ export async function run(): Promise<void> {
   }
 }
 
+async function waitForSettingsTab(): Promise<vscode.Tab | undefined> {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const tab = vscode.window.tabGroups.all
+      .flatMap((group) => group.tabs)
+      .find((item) => item.label === "AI Commit Message 设置");
+    if (tab) {
+      return tab;
+    }
+    console.log(`[integration] waiting for settings tab, labels=${vscode.window.tabGroups.all
+      .flatMap((group) => group.tabs)
+      .map((item) => item.label)
+      .join(",")}`);
+    await delay(100);
+  }
+  return undefined;
+}
+
+function describeInput(input: unknown): string {
+  if (typeof input !== "object" || input === null) {
+    return String(input);
+  }
+  const record = input as Record<string, unknown>;
+  return JSON.stringify({
+    constructor: input.constructor?.name,
+    viewType: record.viewType,
+    keys: Object.keys(record),
+  });
+}
+
 async function startStubServer(): Promise<StubServer> {
   const http = await import("node:http");
   const server = http.createServer((request, response) => {
     request.resume();
     request.on("end", () => {
       response.setHeader("Content-Type", "application/json");
+      if (request.url?.endsWith("/models")) {
+        response.end(JSON.stringify({
+          data: [{
+            id: "integration-model",
+            display_name: "Integration Model",
+            owned_by: "integration",
+            context_length: 1000,
+          }],
+        }));
+        return;
+      }
       response.end(JSON.stringify({
         choices: [{ message: { content: "fix: 集成测试生成成功" } }],
       }));

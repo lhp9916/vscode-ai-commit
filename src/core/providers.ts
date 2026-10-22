@@ -51,6 +51,12 @@ export function getProvider(id: string | undefined): ProviderPreset {
   return PROVIDERS.find((provider) => provider.id === id) ?? PROVIDERS[0];
 }
 
+export function normalizeProvider(value: string | undefined): ProviderId {
+  return PROVIDERS.some((provider) => provider.id === value)
+    ? (value as ProviderId)
+    : "deepseek";
+}
+
 export function effectiveBaseUrl(settings: { provider: ProviderId; baseUrl: string }): string {
   const value = settings.baseUrl.trim();
   return value || getProvider(settings.provider).defaultBaseUrl;
